@@ -82,39 +82,8 @@ watch(activeTab, (newTab) => {
           <VProgressCircular indeterminate color="primary" />
         </div>
 
-        <template v-else-if="morningSign.getTaskData.value">
-          <VCard class="mb-4">
-            <VCardText>
-              <div class="d-flex flex-column gap-3">
-                <div class="d-flex justify-space-between">
-                  <span class="text-body-2 text-medium-emphasis">今日需签到</span>
-                  <span class="font-weight-bold">{{ morningSign.getTaskData.value.dayNeedSignCount }} 次</span>
-                </div>
-                <div class="d-flex justify-space-between">
-                  <span class="text-body-2 text-medium-emphasis">已完成</span>
-                  <span class="font-weight-bold">{{ morningSign.getTaskData.value.dayCompSignCount }} 次</span>
-                </div>
-                <div class="d-flex justify-space-between">
-                  <span class="text-body-2 text-medium-emphasis">剩余</span>
-                  <VChip
-                    :color="morningSign.remainingSigns.value > 0 ? 'warning' : 'success'"
-                    size="small"
-                  >
-                    {{ morningSign.remainingSigns.value }} 次
-                  </VChip>
-                </div>
-                <div v-if="morningSign.getTaskData.value.minTimeInterval" class="d-flex justify-space-between">
-                  <span class="text-body-2 text-medium-emphasis">最小间隔</span>
-                  <span>{{ morningSign.getTaskData.value.minTimeInterval }} 分钟</span>
-                </div>
-                <div v-if="morningSign.getTaskData.value.signStartTime" class="d-flex justify-space-between">
-                  <span class="text-body-2 text-medium-emphasis">签到时间</span>
-                  <span>{{ morningSign.getTaskData.value.signStartTime }} - {{ morningSign.getTaskData.value.signEndTime }}</span>
-                </div>
-              </div>
-            </VCardText>
-          </VCard>
-
+        <template v-else>
+          <!-- 错误信息：始终显示 -->
           <VAlert
             v-if="morningSign.getError.value"
             type="error"
@@ -125,6 +94,7 @@ watch(activeTab, (newTab) => {
             {{ morningSign.getError.value }}
           </VAlert>
 
+          <!-- 成功信息 -->
           <VAlert
             v-if="morningSign.getSuccess.value"
             type="success"
@@ -135,50 +105,86 @@ watch(activeTab, (newTab) => {
             {{ morningSign.getSuccessMessage.value }}
           </VAlert>
 
-          <VCard v-if="morningSign.canSign.value">
-            <VCardTitle>签到操作</VCardTitle>
-            <VCardText>
-              <div class="d-flex flex-column gap-4">
-                <VAlert type="info" variant="tonal" density="compact">
-                  <VIcon start icon="mdi-map-marker" />
-                  签到点：{{ SIGN_POINT.name }}
-                </VAlert>
+          <!-- 有任务数据时显示 -->
+          <template v-if="morningSign.getTaskData.value">
+            <VCard class="mb-4">
+              <VCardText>
+                <div class="d-flex flex-column gap-3">
+                  <div class="d-flex justify-space-between">
+                    <span class="text-body-2 text-medium-emphasis">今日需签到</span>
+                    <span class="font-weight-bold">{{ morningSign.getTaskData.value.dayNeedSignCount }} 次</span>
+                  </div>
+                  <div class="d-flex justify-space-between">
+                    <span class="text-body-2 text-medium-emphasis">已完成</span>
+                    <span class="font-weight-bold">{{ morningSign.getTaskData.value.dayCompSignCount }} 次</span>
+                  </div>
+                  <div class="d-flex justify-space-between">
+                    <span class="text-body-2 text-medium-emphasis">剩余</span>
+                    <VChip
+                      :color="morningSign.remainingSigns.value > 0 ? 'warning' : 'success'"
+                      size="small"
+                    >
+                      {{ morningSign.remainingSigns.value }} 次
+                    </VChip>
+                  </div>
+                  <div v-if="morningSign.getTaskData.value.minTimeInterval" class="d-flex justify-space-between">
+                    <span class="text-body-2 text-medium-emphasis">最小间隔</span>
+                    <span>{{ morningSign.getTaskData.value.minTimeInterval }} 分钟</span>
+                  </div>
+                  <div v-if="morningSign.getTaskData.value.signStartTime" class="d-flex justify-space-between">
+                    <span class="text-body-2 text-medium-emphasis">签到时间</span>
+                    <span>{{ morningSign.getTaskData.value.signStartTime }} - {{ morningSign.getTaskData.value.signEndTime }}</span>
+                  </div>
+                </div>
+              </VCardText>
+            </VCard>
 
-                <VBtn
-                  color="primary"
-                  size="large"
-                  :disabled="!canSign"
-                  :loading="morningSign.getSigning.value"
-                  @click="handleSign"
-                >
-                  <VIcon start icon="mdi-check-circle" />
-                  {{ signButtonText }}
-                </VBtn>
-              </div>
-            </VCardText>
-          </VCard>
+            <VCard v-if="morningSign.canSign.value">
+              <VCardTitle>签到操作</VCardTitle>
+              <VCardText>
+                <div class="d-flex flex-column gap-4">
+                  <VAlert type="info" variant="tonal" density="compact">
+                    <VIcon start icon="mdi-map-marker" />
+                    签到点：{{ SIGN_POINT.name }}
+                  </VAlert>
 
+                  <VBtn
+                    color="primary"
+                    size="large"
+                    :disabled="!canSign"
+                    :loading="morningSign.getSigning.value"
+                    @click="handleSign"
+                  >
+                    <VIcon start icon="mdi-check-circle" />
+                    {{ signButtonText }}
+                  </VBtn>
+                </div>
+              </VCardText>
+            </VCard>
+
+            <VAlert
+              v-else
+              type="success"
+              variant="tonal"
+              class="mt-4"
+            >
+              <template #prepend>
+                <VIcon icon="mdi-check-circle" />
+              </template>
+              今日签到任务已完成
+            </VAlert>
+          </template>
+
+          <!-- 无任务数据时显示（仅当没有错误时） -->
           <VAlert
-            v-else
-            type="success"
+            v-else-if="!morningSign.getError.value"
+            type="info"
             variant="tonal"
             class="mt-4"
           >
-            <template #prepend>
-              <VIcon icon="mdi-check-circle" />
-            </template>
-            今日签到任务已完成
+            暂无签到任务（可能不在签到时间段）
           </VAlert>
         </template>
-
-        <VAlert
-          v-else
-          type="info"
-          variant="tonal"
-          class="mt-4"
-        >
-          暂无签到任务
-        </VAlert>
       </VWindowItem>
 
       <VWindowItem value="score">

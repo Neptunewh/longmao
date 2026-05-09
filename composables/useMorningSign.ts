@@ -75,8 +75,15 @@ export const useMorningSign = () => {
       }
 
       const response = await TotoroApiWrapper.getMorningSignTask(breq)
+
+      console.log('[签到任务] API 响应:', JSON.stringify(response, null, 2))
+
       if (response.data) {
         state.value.taskData = response.data
+      }
+      else {
+        // API 成功但没有任务数据
+        state.value.error = response.message || '当前没有可用的签到任务（可能不在签到时间段）'
       }
     } catch (error) {
       state.value.error = error instanceof Error ? error.message : '获取签到任务失败'
