@@ -16,7 +16,6 @@ export default defineNuxtConfig({
         output: {
           manualChunks: {
             vuetify: ['vuetify'],
-            vue: ['vue', 'vue-router'],
           },
         },
       },
