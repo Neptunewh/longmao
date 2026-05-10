@@ -52,135 +52,415 @@ const pickRandomRoute = () => {
   selectValue.value = list[Math.floor(Math.random() * list.length)].pointId
 }
 </script>
+
 <template>
-  <div v-if="loading" class="d-flex justify-center align-center" style="min-height: 200px;">
-    <VProgressCircular indeterminate color="primary" />
+  <!-- 加载状态 -->
+  <div v-if="loading" class="loading-state">
+    <div class="spinner" />
   </div>
 
-  <div v-else-if="!isSessionValid" class="text-center pa-4">
-    <VAlert type="warning">请先扫码登录</VAlert>
-    <VBtn color="primary" class="mt-4" @click="navigateTo('/')">返回首页</VBtn>
+  <!-- 未登录 -->
+  <div v-else-if="!isSessionValid" class="empty-state">
+    <div class="empty-icon">🔐</div>
+    <p class="empty-text">请先扫码登录</p>
+    <button class="btn-secondary" @click="navigateTo('/')">返回首页</button>
   </div>
 
-  <template v-else>
-    <VAlert v-if="error" type="error" closable class="mb-4" @click:close="error = null">
-      {{ error }}
-    </VAlert>
+  <!-- 主内容 -->
+  <div v-else class="scanned-page">
+    <!-- 错误提示 -->
+    <div v-if="error" class="toast toast-error" @click="error = null">
+      <span>{{ error }}</span>
+      <span class="toast-close">×</span>
+    </div>
 
-    <VCard variant="outlined" class="mb-4">
-      <VCardText>
-        <div class="d-flex align-center ga-3">
-          <VIcon icon="mdi-account-circle" size="40" color="primary" />
-          <div>
-            <div class="text-subtitle-1 font-weight-bold">{{ session?.stuName }}</div>
-            <div class="text-caption text-medium-emphasis">{{ session?.campusName }} · {{ session?.collegeName }} · {{ session?.stuNumber }}</div>
-          </div>
+    <!-- 用户信息卡片 -->
+    <div class="card user-card">
+      <div class="user-avatar">
+        {{ session?.stuName?.charAt(0) }}
+      </div>
+      <div class="user-info">
+        <div class="user-name">{{ session?.stuName }}</div>
+        <div class="user-detail">{{ session?.campusName }} · {{ session?.collegeName }}</div>
+      </div>
+    </div>
+
+    <!-- 模式切换 -->
+    <div class="segment-control">
+      <button
+        class="segment-btn"
+        :class="{ active: runMode === 'sunshine' }"
+        @click="handleModeChange('sunshine')"
+      >
+        ☀️ 阳光跑
+      </button>
+      <button
+        class="segment-btn"
+        :class="{ active: runMode === 'free' }"
+        @click="handleModeChange('free')"
+      >
+        🏃 自由跑
+      </button>
+    </div>
+
+    <!-- 阳光跑模式 -->
+    <template v-if="runMode === 'sunshine'">
+      <!-- 路线选择 -->
+      <div class="card">
+        <div class="card-header">
+          <span class="card-title">选择路线</span>
+          <button class="btn-text" @click="pickRandomRoute">🎲 随机</button>
         </div>
-      </VCardText>
-    </VCard>
-
-    <VCard class="mb-4">
-      <VCardTitle class="text-subtitle-1">选择跑步模式</VCardTitle>
-      <VCardText>
-        <VRow dense>
-          <VCol cols="6">
-            <VCard
-              :variant="runMode === 'sunshine' ? 'elevated' : 'outlined'"
-              :color="runMode === 'sunshine' ? 'primary' : undefined"
-              class="cursor-pointer h-100"
-              @click="handleModeChange('sunshine')"
-            >
-              <VCardText class="text-center pa-3">
-                <VIcon size="36" class="mb-1">mdi-map-marker-path</VIcon>
-                <div class="text-subtitle-2">阳光跑</div>
-                <div class="text-caption">固定路线</div>
-              </VCardText>
-            </VCard>
-          </VCol>
-          <VCol cols="6">
-            <VCard
-              :variant="runMode === 'free' ? 'elevated' : 'outlined'"
-              :color="runMode === 'free' ? 'primary' : undefined"
-              class="cursor-pointer h-100"
-              @click="handleModeChange('free')"
-            >
-              <VCardText class="text-center pa-3">
-                <VIcon size="36" class="mb-1">mdi-run-fast</VIcon>
-                <div class="text-subtitle-2">自由跑</div>
-                <div class="text-caption">自定义参数</div>
-              </VCardText>
-            </VCard>
-          </VCol>
-        </VRow>
-      </VCardText>
-    </VCard>
-
-    <template v-if="data && runMode === 'sunshine'">
-      <VSelect
-        v-model="selectValue"
-        :items="data.runPointList"
-        item-title="pointName"
-        item-value="pointId"
-        variant="outlined"
-        label="选择路线"
-        density="comfortable"
-        class="mb-3"
-      />
-      <div class="d-flex ga-2 mb-3">
-        <VBtn variant="outlined" color="primary" prepend-icon="mdi-shuffle-variant" @click="pickRandomRoute">
-          随机路线
-        </VBtn>
-        <VSpacer />
-        <VBtn
-          color="primary"
-          :disabled="!selectValue"
-          append-icon="mdi-arrow-right"
-          :to="selectValue ? `/run/${encodeURIComponent(selectValue)}` : undefined"
-        >
-          开始跑步
-        </VBtn>
+        <div v-if="data?.runPointList?.length" class="route-list">
+          <button
+            v-for="point in data.runPointList"
+            :key="point.pointId"
+            class="route-item"
+            :class="{ active: selectValue === point.pointId }"
+            @click="handleUpdate(point.pointId)"
+          >
+            <div class="route-info">
+              <span class="route-name">{{ point.pointName }}</span>
+              <span class="route-distance">{{ point.distance }}m</span>
+            </div>
+            <div v-if="selectValue === point.pointId" class="route-check">✓</div>
+          </button>
+        </div>
+        <div v-else class="empty-hint">暂无可用路线</div>
       </div>
-      <p class="text-caption text-medium-emphasis mb-2">地图中的路线仅为展示路线生成效果，不等于最终路线</p>
-      <div class="map-container">
-        <ClientOnly>
-          <AMap :target="selectValue" @update:target="handleUpdate" />
-        </ClientOnly>
-      </div>
+
+      <!-- 批量跑步 -->
+      <BatchRunSetup v-if="selectValue" :select-value="selectValue" />
     </template>
 
-    <template v-if="runMode === 'free'">
-      <VBtn color="primary" append-icon="mdi-arrow-right" block class="mb-3" @click="navigateTo('/freerun')">
-        开始自由跑
-      </VBtn>
-      <VAlert type="info" variant="tonal" density="compact">
-        <ul class="pl-4 text-body-2 mb-0">
-          <li>自定义跑步距离（0.5-20km）和目标时间</li>
-          <li>自动计算配速、卡路里、步数</li>
-          <li>支持批量执行和预设模板</li>
-        </ul>
-      </VAlert>
+    <!-- 自由跑模式 -->
+    <template v-else>
+      <FreeRunSetup />
     </template>
-
-    <VDivider class="my-4" />
-    <h3 class="text-subtitle-1 mb-3">其他功能</h3>
-    <VCard class="cursor-pointer" hover @click="navigateTo('/morningsign')">
-      <VCardText class="d-flex align-center ga-3">
-        <VIcon size="36" color="warning">mdi-alarm-check</VIcon>
-        <div>
-          <div class="text-subtitle-2">早操签到</div>
-          <div class="text-caption text-medium-emphasis">查看签到任务、提交签到、查看成绩</div>
-        </div>
-      </VCardText>
-    </VCard>
-  </template>
+  </div>
 </template>
 
 <style scoped>
-.map-container {
-  width: 100%;
-  height: 40vh;
-  min-height: 250px;
+.scanned-page {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  animation: fade-in 0.4s ease;
+}
+
+@keyframes fade-in {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* 加载状态 */
+.loading-state {
+  display: flex;
+  justify-content: center;
+  padding: 80px 0;
+}
+
+.spinner {
+  width: 32px;
+  height: 32px;
+  border: 3px solid rgba(0, 122, 255, 0.15);
+  border-top-color: #007aff;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+/* 空状态 */
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  padding: 60px 0;
+}
+
+.empty-icon {
+  font-size: 48px;
+}
+
+.empty-text {
+  font-size: 15px;
+  color: #86868b;
+}
+
+/* Toast */
+.toast {
+  padding: 12px 16px;
+  border-radius: 12px;
+  font-size: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  cursor: pointer;
+  animation: slide-down 0.3s ease;
+}
+
+@keyframes slide-down {
+  from { opacity: 0; transform: translateY(-8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.toast-error {
+  background: #fff2f0;
+  color: #ff3b30;
+  border: 1px solid #ffe0db;
+}
+
+.dark-mode .toast-error {
+  background: #3a1c1c;
+  border-color: #5a2a2a;
+}
+
+.toast-close {
+  font-size: 18px;
+  opacity: 0.6;
+}
+
+/* 通用卡片 */
+.card {
+  background: white;
+  border-radius: 20px;
+  padding: 20px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04), 0 4px 12px rgba(0, 0, 0, 0.04);
+}
+
+.dark-mode .card {
+  background: #1c1c1e;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+}
+
+/* 用户卡片 */
+.user-card {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.user-avatar {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #007aff, #5856d6);
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 20px;
+  font-weight: 600;
+  flex-shrink: 0;
+}
+
+.user-name {
+  font-size: 17px;
+  font-weight: 600;
+  letter-spacing: -0.2px;
+}
+
+.user-detail {
+  font-size: 13px;
+  color: #86868b;
+  margin-top: 2px;
+}
+
+.dark-mode .user-detail {
+  color: #98989d;
+}
+
+/* 分段控制器 */
+.segment-control {
+  display: flex;
+  background: #f2f2f7;
+  border-radius: 12px;
+  padding: 3px;
+  gap: 3px;
+}
+
+.dark-mode .segment-control {
+  background: #2c2c2e;
+}
+
+.segment-btn {
+  flex: 1;
+  height: 38px;
+  border: none;
+  border-radius: 10px;
+  background: transparent;
+  font-size: 14px;
+  font-weight: 500;
+  color: #86868b;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.segment-btn.active {
+  background: white;
+  color: #1d1d1f;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08);
+}
+
+.dark-mode .segment-btn.active {
+  background: #3a3a3c;
+  color: #f5f5f7;
+}
+
+/* 路线列表 */
+.card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 16px;
+}
+
+.card-title {
+  font-size: 15px;
+  font-weight: 600;
+  letter-spacing: -0.1px;
+}
+
+.btn-text {
+  border: none;
+  background: none;
+  color: #007aff;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  padding: 4px 8px;
   border-radius: 8px;
-  overflow: hidden;
+  transition: background 0.2s;
+}
+
+.btn-text:hover {
+  background: rgba(0, 122, 255, 0.08);
+}
+
+.dark-mode .btn-text {
+  color: #0a84ff;
+}
+
+.route-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.route-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 16px;
+  border-radius: 14px;
+  border: 1.5px solid #f2f2f7;
+  background: transparent;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  text-align: left;
+  width: 100%;
+  color: inherit;
+}
+
+.route-item:hover {
+  border-color: #e0e0e0;
+}
+
+.route-item.active {
+  border-color: #007aff;
+  background: rgba(0, 122, 255, 0.04);
+}
+
+.dark-mode .route-item {
+  border-color: #2c2c2e;
+}
+
+.dark-mode .route-item:hover {
+  border-color: #3a3a3c;
+}
+
+.dark-mode .route-item.active {
+  border-color: #0a84ff;
+  background: rgba(10, 132, 255, 0.08);
+}
+
+.route-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.route-name {
+  font-size: 15px;
+  font-weight: 500;
+}
+
+.route-distance {
+  font-size: 12px;
+  color: #86868b;
+}
+
+.dark-mode .route-distance {
+  color: #98989d;
+}
+
+.route-check {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: #007aff;
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.dark-mode .route-check {
+  background: #0a84ff;
+}
+
+.empty-hint {
+  text-align: center;
+  padding: 24px;
+  font-size: 14px;
+  color: #86868b;
+}
+
+.dark-mode .empty-hint {
+  color: #98989d;
+}
+
+/* 按钮 */
+.btn-secondary {
+  height: 44px;
+  padding: 0 24px;
+  border-radius: 12px;
+  border: 1.5px solid #e5e5ea;
+  background: white;
+  font-size: 15px;
+  font-weight: 500;
+  color: #007aff;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.btn-secondary:hover {
+  background: #f5f5f7;
+}
+
+.dark-mode .btn-secondary {
+  background: #2c2c2e;
+  border-color: #3a3a3c;
+  color: #0a84ff;
+}
+
+.dark-mode .btn-secondary:hover {
+  background: #3a3a3c;
 }
 </style>

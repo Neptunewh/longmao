@@ -7,8 +7,6 @@ const message = ref('')
 const loading = ref(false)
 const session = useSession()
 
-const randomPoem = computed(() => poem[Math.floor(Math.random() * poem.length)].join('\n'))
-
 const handleScanned = async () => {
   loading.value = true
   const scanRes = await $fetch(`/api/scanQr/${data!.value!.uuid}`)
@@ -45,101 +43,278 @@ const handleScanned = async () => {
   }
 }
 </script>
+
 <template>
   <div class="home-page">
-    <VCard class="welcome-card mb-6" variant="flat">
-      <VCardText class="text-center pa-6">
-        <VIcon icon="mdi-paw" size="56" color="primary" class="mb-3" />
-        <h1 class="text-h5 font-weight-bold mb-1">
-          欢迎来到龙猫乐园
-        </h1>
-        <p class="text-body-2 text-medium-emphasis">
-          阳光跑 · 自由跑 · 早操签到
-        </p>
-      </VCardText>
-    </VCard>
+    <!-- Hero 区域 -->
+    <div class="hero">
+      <div class="hero-icon">
+        <svg width="64" height="64" viewBox="0 0 24 24" fill="none">
+          <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z" fill="currentColor" opacity="0.9"/>
+        </svg>
+      </div>
+      <h1 class="hero-title">龙猫乐园</h1>
+      <p class="hero-subtitle">阳光跑 · 自由跑 · 早操签到</p>
+    </div>
 
-    <VCard class="mb-6" variant="outlined">
-      <VCardText class="pa-5">
-        <div class="d-flex align-center mb-4">
-          <VIcon icon="mdi-qrcode-scan" color="primary" class="me-2" />
-          <span class="text-subtitle-1 font-weight-medium">扫码登录</span>
-        </div>
-
-        <div class="d-flex flex-column align-center">
-          <VCard
-            class="qr-card mb-4"
-            width="220"
-            height="220"
-            variant="tonal"
-            color="primary"
+    <!-- 扫码卡片 -->
+    <div class="card qr-card">
+      <div class="card-header">
+        <span class="card-icon">📱</span>
+        <span class="card-title">扫码登录</span>
+      </div>
+      <div class="qr-wrapper">
+        <div class="qr-frame">
+          <div v-if="!data" class="qr-loading">
+            <div class="spinner" />
+          </div>
+          <img
+            v-else-if="!message"
+            :src="data.imgUrl"
+            class="qr-img"
+            referrerpolicy="no-referrer"
           >
-            <div v-if="!data" class="d-flex justify-center align-center h-100">
-              <VProgressCircular indeterminate color="primary" />
-            </div>
-            <img
-              v-else-if="!message"
-              :src="data.imgUrl"
-              class="w-100 h-100"
-              style="object-fit: contain;"
-              referrerpolicy="no-referrer"
-            >
-            <div v-else class="d-flex justify-center align-center h-100 text-center pa-4">
-              <VIcon icon="mdi-alert-circle" color="error" class="me-2" />
-              <span class="text-body-2 text-error">{{ message }}</span>
-            </div>
-          </VCard>
-
-          <p class="text-body-2 text-medium-emphasis mb-4 text-center">
-            请使用微信扫描上方二维码
-          </p>
-
-          <VBtn
-            color="primary"
-            size="large"
-            :loading="loading"
-            :disabled="!!message"
-            append-icon="mdi-arrow-right"
-            @click="handleScanned"
-          >
-            已扫码，下一步
-          </VBtn>
+          <div v-else class="qr-error">
+            <span class="error-text">{{ message }}</span>
+          </div>
         </div>
-      </VCardText>
-    </VCard>
+        <p class="qr-hint">请使用微信扫描上方二维码</p>
+      </div>
+      <button
+        class="btn-primary"
+        :disabled="loading || !!message"
+        @click="handleScanned"
+      >
+        <span v-if="loading" class="btn-spinner" />
+        <span v-else>已扫码，下一步</span>
+        <svg v-if="!loading" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M5 12h14M12 5l7 7-7 7"/>
+        </svg>
+      </button>
+    </div>
 
-    <VCard variant="flat" color="surface-variant" class="poem-card">
-      <VCardText class="pa-4">
-        <VIcon icon="mdi-format-quote-open" size="20" class="me-1 text-medium-emphasis" />
-        <p class="text-body-2 text-medium-emphasis pre-wrap mb-0">
-          {{ randomPoem }}
-        </p>
-      </VCardText>
-    </VCard>
-
-    <p class="text-caption text-center text-medium-emphasis mt-6">
+    <!-- 底部引言 -->
+    <p class="quote">
       古典时代的人发现人体是权力的对象和目标。—— 米歇尔·福柯
     </p>
   </div>
 </template>
 
 <style scoped>
-.welcome-card {
-  background: linear-gradient(135deg, rgba(var(--v-theme-primary), 0.1), rgba(var(--v-theme-secondary), 0.05));
+.home-page {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 24px;
+  animation: fade-in 0.6s ease;
+}
+
+@keyframes fade-in {
+  from { opacity: 0; transform: translateY(12px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* Hero */
+.hero {
+  text-align: center;
+  padding: 32px 0 8px;
+}
+
+.hero-icon {
+  width: 80px;
+  height: 80px;
+  border-radius: 22px;
+  background: linear-gradient(135deg, #007aff, #5856d6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 20px;
+  color: white;
+  box-shadow: 0 8px 32px rgba(0, 122, 255, 0.25);
+}
+
+.hero-title {
+  font-size: 34px;
+  font-weight: 700;
+  letter-spacing: -0.5px;
+  margin-bottom: 6px;
+}
+
+.hero-subtitle {
+  font-size: 15px;
+  color: #86868b;
+  font-weight: 400;
+}
+
+/* 通用卡片 */
+.card {
+  width: 100%;
+  max-width: 400px;
+  background: white;
+  border-radius: 20px;
+  padding: 28px 24px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04), 0 4px 12px rgba(0, 0, 0, 0.04);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.06), 0 8px 32px rgba(0, 0, 0, 0.04);
+}
+
+.dark-mode .card {
+  background: #1c1c1e;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3), 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
+.card-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 24px;
+}
+
+.card-icon {
+  font-size: 20px;
+}
+
+.card-title {
+  font-size: 17px;
+  font-weight: 600;
+  letter-spacing: -0.2px;
+}
+
+/* QR 码 */
+.qr-wrapper {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+}
+
+.qr-frame {
+  width: 200px;
+  height: 200px;
   border-radius: 16px;
-}
-
-.qr-card {
-  border-radius: 12px;
   overflow: hidden;
+  background: #f5f5f7;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid rgba(0, 0, 0, 0.06);
 }
 
-.poem-card {
-  border-radius: 12px;
-  border-left: 3px solid rgba(var(--v-theme-primary), 0.5);
+.dark-mode .qr-frame {
+  background: #2c2c2e;
+  border-color: rgba(255, 255, 255, 0.06);
 }
 
-.pre-wrap {
-  white-space: pre-wrap;
+.qr-img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+.qr-loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.spinner {
+  width: 28px;
+  height: 28px;
+  border: 3px solid rgba(0, 122, 255, 0.15);
+  border-top-color: #007aff;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+.qr-error {
+  padding: 16px;
+  text-align: center;
+}
+
+.error-text {
+  font-size: 13px;
+  color: #ff3b30;
+}
+
+.qr-hint {
+  font-size: 13px;
+  color: #86868b;
+  text-align: center;
+}
+
+/* 主按钮 */
+.btn-primary {
+  width: 100%;
+  height: 50px;
+  border-radius: 14px;
+  border: none;
+  background: #007aff;
+  color: white;
+  font-size: 17px;
+  font-weight: 600;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  transition: all 0.2s ease;
+  margin-top: 24px;
+}
+
+.btn-primary:hover:not(:disabled) {
+  background: #0066d6;
+  transform: scale(1.01);
+}
+
+.btn-primary:active:not(:disabled) {
+  transform: scale(0.98);
+}
+
+.btn-primary:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.btn-spinner {
+  width: 20px;
+  height: 20px;
+  border: 2.5px solid rgba(255, 255, 255, 0.3);
+  border-top-color: white;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+/* 引言 */
+.quote {
+  font-size: 12px;
+  color: #aeaeb2;
+  text-align: center;
+  padding: 16px 32px;
+  line-height: 1.6;
+}
+
+.dark-mode .quote {
+  color: #636366;
+}
+
+.dark-mode .hero-subtitle,
+.dark-mode .qr-hint {
+  color: #98989d;
+}
+
+.dark-mode .btn-primary {
+  background: #0a84ff;
+}
+
+.dark-mode .btn-primary:hover:not(:disabled) {
+  background: #409cff;
 }
 </style>
