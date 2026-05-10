@@ -1,3 +1,4 @@
+import { useTheme } from 'vuetify'
 <script setup lang="ts">
 const appConfig = useAppConfig()
 const route = useRoute()
