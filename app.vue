@@ -1,5 +1,6 @@
-import { useTheme } from 'vuetify'
 <script setup lang="ts">
+import { useTheme } from 'vuetify'
+
 const appConfig = useAppConfig()
 const route = useRoute()
 const theme = useTheme()
